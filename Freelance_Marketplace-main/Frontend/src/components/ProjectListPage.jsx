@@ -19,6 +19,14 @@ export default function ProjectListPage() {
       try {
         setLoading(true);
         const res = await axios.get('/projects');
+        if (Array.isArray(res.data)) {
+          setProjects(res.data);
+          } else {
+    // This prevents the "j.map" crash
+      console.error("API Error: Expected array but got:", res.data);
+          setProjects([]); 
+    if (res.data.error) setError(res.data.error);
+}
         setProjects(res.data);
       } catch (err) {
         console.error('Failed to fetch projects', err);
