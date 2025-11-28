@@ -14,3 +14,5 @@ Freelance_Marketplace-main/backend/graphs/
 Freelance_Marketplace-main/backend/instance/
 
 .vscode/
+
+Freelance_Marketplace-main/backend/seed_db.py

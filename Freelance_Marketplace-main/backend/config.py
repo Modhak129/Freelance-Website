@@ -18,9 +18,8 @@ class Config:
         uri = uri.replace("postgres://", "postgresql://", 1)
         
     # Fallback to SQLite if no URL is found (for local testing)
-    SQLALCHEMY_DATABASE_URI = uri or 'sqlite:///site.db'
+    SQLALCHEMY_DATABASE_URI = uri
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get('SECRET_KEY') or "dev_secret_key_1234567890!@#$"
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or "dev_jwt_secret_key_0987654321!@#$"
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///site.db'
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
