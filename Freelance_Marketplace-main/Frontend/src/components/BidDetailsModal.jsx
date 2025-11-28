@@ -39,7 +39,7 @@ export default function BidDetailsModal({ bid, onClose }) {
 
           {bid.score !== undefined && (
             <div className="mb-6 bg-green-100 border border-green-200 p-3 rounded-lg">
-              <p className="text-green-800 text-xs font-bold uppercase">AI Rank Score</p>
+              <p className="text-green-800 text-xs font-bold uppercase"> Rank Score</p>
               <p className="text-2xl font-bold text-green-700">{bid.score.toFixed(1)} / 10</p>
             </div>
           )}
