@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { AuthProvider } from './context/AuthContext';
 import NavBar from './components/Navbar';
 
-import HomePage from './components/HomePage';
+import HomePage from './components/Homepage';
 import AuthPage from './components/AuthPage';
 import ProjectListPage from './components/ProjectListPage';
 import ProjectDetailPage from './components/ProjectDetailsPage';
