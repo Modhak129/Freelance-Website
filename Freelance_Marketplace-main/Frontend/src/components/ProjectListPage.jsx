@@ -19,10 +19,22 @@ export default function ProjectListPage() {
       try {
         setLoading(true);
         const res = await axios.get('/projects');
-        setProjects(res.data);
+        
+        // --- SAFETY CHECK (The Fix) ---
+        // Only set projects if the response is actually an array (List).
+        if (Array.isArray(res.data)) {
+            setProjects(res.data);
+        } else {
+            console.error("API Error: Expected array but got:", res.data);
+            setProjects([]); // Fallback to empty list to prevent crash
+            // If the backend sent an error message object, show it
+            if (res.data.error) setError(res.data.error);
+        }
+        // -----------------------------
+
       } catch (err) {
         console.error('Failed to fetch projects', err);
-        setError('Failed to load projects.');
+        setError('Failed to load projects. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -45,6 +57,7 @@ export default function ProjectListPage() {
   };
 
   // Pagination Logic
+  // Now safe because 'projects' is guaranteed to be an array
   const indexOfLastProject = currentPage * projectsPerPage;
   const indexOfFirstProject = indexOfLastProject - projectsPerPage;
   const currentProjects = projects.slice(indexOfFirstProject, indexOfLastProject);
