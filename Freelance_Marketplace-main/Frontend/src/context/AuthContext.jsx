@@ -4,7 +4,7 @@ import { Navigate, Outlet } from "react-router-dom";
 
 
 // --- CHANGE: Set axios base URL globally based on environment variable ---
-const API_ROOT = process.env.REACT_APP_API_URL || "http://127.0.0.1:5000";
+const API_ROOT = process.env.REACT_APP_API_URL;
 axios.defaults.baseURL = `${API_ROOT}/api`;
 
 const AuthContext = createContext(undefined); // use undefined so we can detect missing provider
