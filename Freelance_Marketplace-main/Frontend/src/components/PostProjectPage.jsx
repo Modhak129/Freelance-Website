@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-// Same skills list as your profile page
 const AVAILABLE_SKILLS = [
   "Web Development", "App Development", "UI/UX Design", "Python", "Java",
   "React.js", "Node.js", "Data Analysis", "Content Writing", "Digital Marketing",
@@ -14,7 +13,8 @@ export default function PostProjectPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    budget: ''
+    budget: '',
+    deadline_days: ''
   });
   
   const [requiredSkills, setRequiredSkills] = useState([]);
@@ -36,10 +36,8 @@ export default function PostProjectPage() {
     e.preventDefault();
     setError('');
 
-    // --- CUSTOM VALIDATION: Check if at least one skill is selected ---
     if (requiredSkills.length === 0) {
       setError('Please select at least one Required Skill.');
-      // Scroll to top to show error
       window.scrollTo(0, 0); 
       return;
     }
@@ -50,6 +48,7 @@ export default function PostProjectPage() {
       const payload = {
         ...formData,
         budget: parseFloat(formData.budget),
+        deadline_days: parseInt(formData.deadline_days),
         required_skills: requiredSkills.join(',') 
       };
 
@@ -63,15 +62,23 @@ export default function PostProjectPage() {
     }
   };
 
+  // --- REUSABLE STYLES TO MATCH AUTH PAGE ---
+  const inputStyle = "w-full px-4 py-3 bg-white border-2 border-gray-800 rounded-lg shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] focus:outline-none focus:border-indigo-500 focus:shadow-[6px_6px_0px_0px_rgba(99,102,241,1)] focus:-translate-y-0.5 transition-all text-gray-900 placeholder-gray-500 font-medium";
+  
+  const labelStyle = "block text-sm font-bold text-gray-800 mb-1 ml-1";
+
   return (
-    // Removed local background gradient so the global Green Theme shows through
     <div className="min-h-screen py-16 px-4 flex items-center justify-center">
-      <div className="bg-white/20 backdrop-blur-lg border border-white/30 p-8 rounded-xl shadow-2xl w-full max-w-2xl">
-        <h1 className="text-3xl font-bold mb-8 text-center text-white drop-shadow-md">Post a New Project</h1>
+      
+      {/* --- MAIN CARD --- */}
+      <div className="bg-white border-2 border-gray-800 p-8 rounded-2xl shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] w-full max-w-2xl">
         
-        {/* Error Alert */}
+        <h1 className="text-4xl font-extrabold mb-8 text-center text-gray-900 uppercase tracking-tight">
+          Post a Project
+        </h1>
+        
         {error && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6 font-medium">
+          <div className="bg-red-50 border-2 border-red-500 text-red-700 p-4 rounded-lg mb-6 font-bold shadow-[4px_4px_0px_0px_rgba(239,68,68,1)]">
             {error}
           </div>
         )}
@@ -80,15 +87,15 @@ export default function PostProjectPage() {
           
           {/* Title Input */}
           <div>
-            <label className="block text-sm font-bold text-white mb-1">
-              Project Title <span className="text-red-300">*</span>
+            <label className={labelStyle}>
+              Project Title <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="title"
-              required  // <--- HTML5 Validation
+              required
               placeholder="e.g. E-commerce Website Redesign"
-              className="w-full px-4 py-3 bg-white/60 border border-white/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-colors text-gray-900 placeholder-gray-500"
+              className={inputStyle}
               value={formData.title}
               onChange={handleChange}
             />
@@ -96,15 +103,15 @@ export default function PostProjectPage() {
 
           {/* Description Input */}
           <div>
-            <label className="block text-sm font-bold text-white mb-1">
-              Description <span className="text-red-300">*</span>
+            <label className={labelStyle}>
+              Description <span className="text-red-500">*</span>
             </label>
             <textarea
               name="description"
-              required // <--- HTML5 Validation
+              required
               rows="5"
               placeholder="Describe the project details, deliverables, and timeline..."
-              className="w-full px-4 py-3 bg-white/60 border border-white/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-colors text-gray-900 placeholder-gray-500"
+              className={inputStyle}
               value={formData.description}
               onChange={handleChange}
             />
@@ -112,81 +119,79 @@ export default function PostProjectPage() {
 
           {/* Skills Section */}
           <div>
-            <label className="block text-sm font-bold text-white mb-2">
-              Required Skills <span className="text-red-300">*</span>
+            <label className={labelStyle}>
+              Required Skills <span className="text-red-500">*</span>
             </label>
-            <div className={`grid grid-cols-2 md:grid-cols-3 gap-3 bg-white/40 p-4 rounded-lg border ${requiredSkills.length === 0 && error ? 'border-red-400 ring-2 ring-red-400' : 'border-white/20'}`}>
+            <div className={`grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50 p-5 rounded-xl border-2 border-gray-800 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)]`}>
               {AVAILABLE_SKILLS.map((skill) => (
-                <label key={skill} className="flex items-center space-x-2 cursor-pointer hover:bg-white/30 p-1 rounded transition">
+                <label key={skill} className="flex items-center space-x-3 cursor-pointer hover:bg-white p-2 rounded-lg transition-colors border border-transparent hover:border-gray-300">
                   <input 
                     type="checkbox" 
-                    className="form-checkbox h-4 w-4 text-indigo-900 rounded border-gray-300 focus:ring-indigo-500"
+                    className="form-checkbox h-5 w-5 text-indigo-600 rounded border-2 border-gray-600 focus:ring-indigo-500 cursor-pointer"
                     checked={requiredSkills.includes(skill)}
                     onChange={() => handleSkillToggle(skill)}
                   />
-                  <span className="text-gray-900 font-medium text-sm">{skill}</span>
+                  <span className="text-gray-800 font-bold text-sm">{skill}</span>
                 </label>
               ))}
             </div>
-            <p className="text-xs text-gray-200 mt-1 font-medium">Select the skills freelancers need for this job.</p>
+            <p className="text-xs text-gray-500 mt-2 font-bold ml-1">Select the skills freelancers need for this job.</p>
           </div>
 
-          {/* Budget Input */}
-          <div>
-            <label className="block text-sm font-bold text-white mb-1">
-              Budget ($) <span className="text-red-300">*</span>
-            </label>
-            <input
-              type="number"
-              name="budget"
-              required // <--- HTML5 Validation
-              min="1"
-              step="0.01"
-              placeholder="500.00"
-              className="w-full px-4 py-3 bg-white/60 border border-white/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-colors text-gray-900 placeholder-gray-500"
-              value={formData.budget}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-white mb-1">
-              Timeline (Days) <span className="text-red-300">*</span>
-            </label>
-            <input
-              type="number"
-              name="deadline_days"
-              required
-              min="2" // <--- Enforces minimum 2 in the browser
-              placeholder="e.g. 7 (Minimum: 2)"
-              className="w-full px-4 py-3 bg-white/60 border border-white/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-colors text-gray-900 placeholder-gray-500"
-              value={formData.deadline_days}
-              onChange={(e) => {
-                // Optional: Prevent user from even typing numbers < 1, 
-                // but allow empty string for typing experience
-                const val = e.target.value;
-                setFormData({ ...formData, deadline_days: val });
-              }}
-              // Optional: On Blur check to auto-correct
-              onBlur={(e) => {
-                 if(e.target.value !== "" && parseInt(e.target.value) < 2) {
-                    setFormData({ ...formData, deadline_days: "2" });
-                 }
-              }}
-            />
-            <p className="text-xs text-gray-200 mt-1">Minimum 2 days required for project completion.</p>
+          {/* Grid for Budget & Timeline */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Budget Input */}
+            <div>
+              <label className={labelStyle}>
+                Budget ($) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="budget"
+                required
+                min="1"
+                step="0.01"
+                placeholder="500.00"
+                className={inputStyle}
+                value={formData.budget}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Deadline Input */}
+            <div>
+              <label className={labelStyle}>
+                Timeline (Days) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="deadline_days"
+                required
+                min="2"
+                placeholder="e.g. 7"
+                className={inputStyle}
+                value={formData.deadline_days}
+                onChange={(e) => setFormData({ ...formData, deadline_days: e.target.value })}
+                onBlur={(e) => {
+                   if(e.target.value !== "" && parseInt(e.target.value) < 2) {
+                      setFormData({ ...formData, deadline_days: "2" });
+                   }
+                }}
+              />
+            </div>
           </div>
 
           {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3.5 rounded-lg text-white font-bold text-lg shadow-lg transition-all transform hover:-translate-y-1 ${
+            className={`w-full py-4 rounded-xl text-white font-bold text-lg border-2 border-gray-900 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] transition-all active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] mt-4 ${
               loading 
                 ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-linear-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800'
+                : 'bg-indigo-600 hover:bg-indigo-700 hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)]'
             }`}
           >
-            {loading ? 'Posting...' : 'Post Project'}
+            {loading ? 'Publishing Project...' : 'Post Project'}
           </button>
         </form>
       </div>

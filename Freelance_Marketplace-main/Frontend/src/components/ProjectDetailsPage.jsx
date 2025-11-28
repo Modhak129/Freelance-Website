@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import BidDetailsModal from './BidDetailsModal';
 import ReviewModal from './ReviewModal';
-import {AnimatedButton} from '../styles/AnimatedButton';
 
-const BIDS_PER_PAGE = 20;
+const BIDS_PER_PAGE = 8;
 
 const AVAILABLE_SKILLS = [
   "Web Development", "App Development", "UI/UX Design", "Python", "Java",
@@ -33,10 +32,14 @@ export default function ProjectDetailsPage() {
   const [days, setDays] = useState('');
   const [bidMsg, setBidMsg] = useState('');
   const [showReviewModal, setShowReviewModal] = useState(false);
-  
+  const [error, setError] = useState('');
+
   // Pagination & Modals
   const [bidPage, setBidPage] = useState(1);
   const [selectedBid, setSelectedBid] = useState(null);
+
+  // --- 1. REF FOR SCROLLING ---
+  const bidsRef = useRef(null);
 
   // --- FETCH ---
   const fetchProject = async () => {
@@ -53,6 +56,7 @@ export default function ProjectDetailsPage() {
 
   useEffect(() => { fetchProject(); }, [id]);
 
+  // --- HELPER VARIABLES ---
   const isClient = user && project && (
     (project.client_id && user.id === project.client_id) || 
     (project.client && user.id === project.client.id)
@@ -109,7 +113,6 @@ export default function ProjectDetailsPage() {
     } catch (err) { alert(err.response?.data?.msg || "Failed to post review"); }
   };
   
-  // Populate edit form with existing data
   const handleEditClick = () => {
     const skillsArray = project.required_skills ? project.required_skills.split(',').map(s => s.trim()) : [];
     setEditForm({
@@ -126,7 +129,6 @@ export default function ProjectDetailsPage() {
   const handleSaveProject = async (e) => {
     e.preventDefault();
     try {
-      // Even though we only edited Description, we send back the full object to satisfy the PUT request
       const payload = { 
         ...editForm, 
         budget: parseFloat(editForm.budget), 
@@ -142,14 +144,21 @@ export default function ProjectDetailsPage() {
   const handleRank = async () => {
     try {
       const res = await axios.post('/rank_bids', { project_id: project.id, priority: rankingPriority });
-      if (res.data.ranked_bids) { setProject(prev => ({ ...prev, bids: res.data.ranked_bids })); setBidPage(1); }
+      if (res.data.ranked_bids) { 
+        setProject(prev => ({ ...prev, bids: res.data.ranked_bids })); 
+        setBidPage(1); 
+        // Scroll to top of list after ranking
+        if (bidsRef.current) bidsRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
     } catch (err) { console.error("Ranking failed", err); }
   };
+
   const handleAcceptBid = async (bidId) => {
     if(!window.confirm("Accept this bid? Timer will start immediately.")) return;
     try { await axios.post(`/project/${project.id}/accept_bid`, { bid_id: bidId }); fetchProject(); } 
     catch(err) { alert("Failed to accept bid"); }
   };
+
   const handlePlaceBid = async (e) => {
     e.preventDefault();
     try {
@@ -194,12 +203,27 @@ export default function ProjectDetailsPage() {
   const allBids = project.bids || [];
   const bidsToDisplay = project.status === 'open' 
     ? allBids 
-    : allBids.filter(b => b.freelancer?.id === (project.freelancer?.id || project.freelancer_id));
+    : allBids.filter(b => {
+        const bidFreelancerId = b.freelancer?.id || b.freelancer_id;
+        const projectFreelancerId = project.freelancer?.id || project.freelancer_id;
+        return bidFreelancerId === projectFreelancerId;
+      });
 
+  // --- 2. PAGINATION HANDLER ---
   const totalBidPages = Math.ceil(bidsToDisplay.length / BIDS_PER_PAGE);
   const indexOfLastBid = bidPage * BIDS_PER_PAGE;
   const indexOfFirstBid = indexOfLastBid - BIDS_PER_PAGE;
   const currentBids = bidsToDisplay.slice(indexOfFirstBid, indexOfLastBid);
+
+  const handleBidPageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalBidPages) {
+        setBidPage(newPage);
+        // Scroll to the "bidsRef" container
+        if (bidsRef.current) {
+            bidsRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+  };
 
   return (
     <div className="container mx-auto py-12 px-4">
@@ -209,7 +233,7 @@ export default function ProjectDetailsPage() {
       {/* MAIN CARD */}
       <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
         
-        {/* --- HEADER (Always Static / Read-Only) --- */}
+        {/* --- HEADER --- */}
         <div className="bg-gray-50 p-8 border-b border-gray-200">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
@@ -230,8 +254,7 @@ export default function ProjectDetailsPage() {
               </div>
               <div className="bg-indigo-50 px-3 py-1 rounded border border-indigo-100 text-sm">{getTimeStatus()}</div>
               
-              {/* EDIT BUTTON: Only visible if Client AND Status is OPEN AND not currently editing */}
-              {isClient && project.status === 'open' && !isEditing && (
+              {isClient && !isEditing && (
                 <button onClick={handleEditClick} className="mt-2 text-xs bg-white border border-gray-300 text-gray-600 px-3 py-1 rounded hover:bg-gray-50 transition">
                   Edit Project
                 </button>
@@ -240,10 +263,9 @@ export default function ProjectDetailsPage() {
           </div>
         </div>
 
-        {/* --- BODY CONTENT (Switchable) --- */}
+        {/* --- BODY CONTENT --- */}
         <div className="p-8 space-y-8">
           {!isEditing ? (
-            // --- VIEW MODE ---
             <>
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Description</h3>
@@ -261,12 +283,10 @@ export default function ProjectDetailsPage() {
               </div>
             </>
           ) : (
-            // --- EDIT MODE (Only Description Editable) ---
             <form onSubmit={handleSaveProject} className="space-y-6">
               <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 rounded mb-4">
                 <p className="text-sm">Note: You can only edit the description. Title, Budget, and Skills are locked.</p>
               </div>
-
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
                 <textarea 
@@ -276,8 +296,6 @@ export default function ProjectDetailsPage() {
                   onChange={e => setEditForm({...editForm, description: e.target.value})} 
                 />
               </div>
-
-              {/* Static Skills View in Edit Mode */}
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-3">Required Skills (Read-Only)</h3>
                 <div className="flex flex-wrap gap-2">
@@ -288,24 +306,29 @@ export default function ProjectDetailsPage() {
                   ))}
                 </div>
               </div>
-
               <div className="flex gap-4 pt-2">
-                <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded font-bold hover:bg-indigo-700 transition">
-                  Save Changes
-                </button>
-                <button type="button" onClick={() => setIsEditing(false)} className="border border-gray-300 text-gray-700 px-6 py-2 rounded font-bold hover:bg-gray-50 transition">
-                  Cancel
-                </button>
+                <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded font-bold hover:bg-indigo-700 transition">Save Changes</button>
+                <button type="button" onClick={() => setIsEditing(false)} className="border border-gray-300 text-gray-700 px-6 py-2 rounded font-bold hover:bg-gray-50 transition">Cancel</button>
               </div>
             </form>
           )}
         </div>
       </div>
 
-      {/* --- BIDS SECTION (Hidden during Edit) --- */}
+      {/* --- ACTION PANEL --- */}
+      {project.status !== 'open' && (
+        <div className="bg-white rounded-xl shadow-lg p-8 mt-8 border border-gray-100">
+          <h2 className="text-2xl font-bold mb-6 text-center text-gray-900">Project Status</h2>
+          {renderActionPanel()}
+        </div>
+      )}
+
+      {/* --- BIDS SECTION --- */}
       {!isEditing && (
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+          
+          {/* 3. ATTACH REF TO BIDS CONTAINER */}
+          <div className="lg:col-span-2" ref={bidsRef}>
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-gray-900">
@@ -360,14 +383,15 @@ export default function ProjectDetailsPage() {
 
               {bidsToDisplay.length > BIDS_PER_PAGE && (
                 <div className="flex justify-center mt-6 gap-2">
-                  <button onClick={() => setBidPage(prev => Math.max(prev - 1, 1))} disabled={bidPage === 1} className="px-3 py-1 rounded text-sm bg-gray-100">Prev</button>
+                  <button onClick={() => handleBidPageChange(bidPage - 1)} disabled={bidPage === 1} className="px-3 py-1 rounded text-sm bg-gray-100">Prev</button>
                   <span className="text-sm text-gray-600 self-center">Page {bidPage} of {totalBidPages}</span>
-                  <button onClick={() => setBidPage(prev => Math.min(prev + 1, totalBidPages))} disabled={bidPage === totalBidPages} className="px-3 py-1 rounded text-sm bg-gray-100">Next</button>
+                  <button onClick={() => handleBidPageChange(bidPage + 1)} disabled={bidPage === totalBidPages} className="px-3 py-1 rounded text-sm bg-gray-100">Next</button>
                 </div>
               )}
             </div>
           </div>
 
+          {/* Place Bid Form */}
           {isFreelancer && project.status === 'open' && (
             <div>
               <div className="bg-white rounded-xl shadow-lg p-6 sticky top-24">
