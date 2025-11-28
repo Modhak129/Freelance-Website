@@ -1,0 +1,15 @@
+/* ===== Global Resets ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: "Poppins", sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #079977 0%, #027756 100%);
+  /* REMOVED the purple background here. 
+     The Green background is now handled in App.jsx */
+     background-color: rgba(163, 163, 167, 0.919);
+}
+
+/* You can keep basic utility classes if needed, 
+   but the specific .login-card styles are no longer used 
+   by the new AuthPage.jsx */
